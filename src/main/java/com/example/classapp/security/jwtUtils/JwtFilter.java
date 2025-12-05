@@ -1,6 +1,7 @@
 package com.example.classapp.security.jwtUtils;
 
 
+import com.example.classapp.shared.constants.Api;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;

@@ -41,12 +41,27 @@ public class ClassServiceImpl implements ClassService {
                 .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"User not found"));
     }
 
+    private TeacherEntity getCurrentTeacher() {
+        UserEntity user = getCurrentUser();
+        return teachersDao.findByUserId(user.getId())
+                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Teacher not found"));
+    }
+
+    private StudentEntity getCurrentStudent() {
+        UserEntity user = getCurrentUser();
+        return studentsDao.findByUserId(user.getId())
+                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Student not found"));
+    }
+
+    private ClassEntity getCurrentClass(Long classId) {
+        return classDao.findById(classId)
+                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Class not found"));
+    }
+
 
     @Transactional
     public ResponseEntity<GlobalResponse<ClassResponse>> createClass(ClassRequest request) {
-        UserEntity user = getCurrentUser();
-        TeacherEntity teacher = teachersDao.findByUserId(user.getId())
-                .orElseThrow(() -> new GlobalException(HttpStatus.UNAUTHORIZED,"Only teachers can create class"));
+        TeacherEntity teacher = getCurrentTeacher();
 
         ClassEntity classEntity = new ClassEntity();
         classEntity.setName(request.getName());
@@ -64,6 +79,43 @@ public class ClassServiceImpl implements ClassService {
                 .build();
         return ResponseGenerator.generateResponse("Class created succesfully",response,HttpStatus.CREATED);
     };
+
+    @Transactional
+    public ResponseEntity<GlobalResponse<ClassResponse>> updateClass(Long classId,ClassRequest request) {
+        TeacherEntity teacher = getCurrentTeacher();
+
+        ClassEntity classEntity = getCurrentClass(classId);
+
+        if (!classEntity.getCreator().getId().equals(teacher.getId())) {
+            throw new GlobalException(HttpStatus.FORBIDDEN, "Only the creator can update this class");
+        }
+
+        classEntity.setName(request.getName());
+        classEntity.setDescription(request.getDescription());
+        classDao.save(classEntity);
+
+        ClassResponse response = ClassResponse.builder()
+                .id(classEntity.getId())
+                .name(classEntity.getName())
+                .description(classEntity.getDescription())
+                .creatorName(teacher.getUser().getName())
+                .build();
+        return ResponseGenerator.generateResponse("Class updated succesfully",response,HttpStatus.OK);
+    }
+
+    @Transactional
+    public ResponseEntity<GlobalResponse<Void>> deleteClass(Long classId) {
+        TeacherEntity teacher = getCurrentTeacher();
+
+        ClassEntity classEntity = getCurrentClass(classId);
+
+        if (!classEntity.getCreator().getId().equals(teacher.getId())) {
+            throw new GlobalException(HttpStatus.FORBIDDEN, "Only the creator can delete this class");
+        }
+
+        classDao.delete(classEntity);
+        return ResponseGenerator.generateResponse("Class deleted succesfully",null,HttpStatus.OK);
+    }
 
     @Transactional
     public ResponseEntity<GlobalResponse<List<ClassResponse>>> getAllClasses() {
@@ -95,8 +147,8 @@ public class ClassServiceImpl implements ClassService {
 
     @Transactional
     public ResponseEntity<GlobalResponse<ClassResponse>> findClass(Long classId) {
-       ClassEntity classEntity = classDao.findById(classId)
-               .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND, "Class not found"));
+       ClassEntity classEntity = getCurrentClass(classId);
+
         ClassResponse response = ClassResponse.builder()
                 .id(classEntity.getId())
                 .name(classEntity.getName())
@@ -109,9 +161,8 @@ public class ClassServiceImpl implements ClassService {
 
     @Transactional
     public ResponseEntity<GlobalResponse<List<ClassResponse>>> getMyCreatedClasses(){
-        UserEntity user = getCurrentUser();
-        TeacherEntity teacher = teachersDao.findByUserId(user.getId())
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND, "Only the creator can see the classes"));
+        TeacherEntity teacher = getCurrentTeacher();
+
         List<ClassEntity> classes = classDao.findByCreatorId(teacher.getId());
 
         List<ClassResponse> response = classes.stream()
@@ -129,12 +180,9 @@ public class ClassServiceImpl implements ClassService {
 
     @Transactional
     public ResponseEntity<GlobalResponse<List<StudentResponse>>> getClassStudents(Long classId) {
-        UserEntity user = getCurrentUser();
-        TeacherEntity teacher = teachersDao.findByUserId(user.getId())
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND, "Only Teachers can see the students"));
+        TeacherEntity teacher = getCurrentTeacher();
 
-        ClassEntity classEntity = classDao.findById(classId)
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND, "Class not found"));
+        ClassEntity classEntity = getCurrentClass(classId);
 
         if(!classEntity.getCreator().getId().equals(teacher.getId())) {
             throw new GlobalException(HttpStatus.FORBIDDEN,"Only the creator can see this students");
@@ -151,21 +199,4 @@ public class ClassServiceImpl implements ClassService {
                 ).collect(Collectors.toList());
         return ResponseGenerator.generateResponse("All students found", response, HttpStatus.OK);
     }
-
-
-
-
-
-
-
-//    private ClassResponse mapToClassResponse(ClassEntity c, boolean isEnrolled) {
-//        return ClassResponse.builder()
-//                .id(c.getId())
-//                .name(c.getName())
-//                .description(c.getDescription())
-//                .creator(c.getCreator())
-//                .isEnrolled(isEnrolled)
-//                .build();
-//    }
-
 }

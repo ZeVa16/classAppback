@@ -64,7 +64,6 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setUserType(registerRequest.getUserType() != null ? registerRequest.getUserType() : UserType.STUDENT);
         user = userDao.save(user);
-
         createUserStudentOrTeacher(user);
 
         String token = jwtTokenProvider.generateTokenFromEmail(

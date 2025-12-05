@@ -44,17 +44,23 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return userDao.findByEmail(email)
                 .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"User Not Found"));
     }
+    private StudentEntity getCurrentStudent(String exMessage) {
+        UserEntity user = getCurrentUser();
+        return studentsDao.findByUserId(user.getId())
+                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,exMessage));
+    }
+
+    private ClassEntity getCurrentClass(Long classId) {
+        return classDao.findById(classId)
+                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Class not found"));
+    }
 
     @Transactional
     public ResponseEntity<GlobalResponse<EnrollmentResponse>> enrollIn(Long classId){
 
-        UserEntity user = getCurrentUser();
+        StudentEntity student = getCurrentStudent("Only students can enroll in a class");
 
-        StudentEntity student = studentsDao.findByUserId(user.getId())
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Only students can enroll in a class"));
-
-        ClassEntity classEntity = classDao.findById(classId)
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Class not founded"));
+        ClassEntity classEntity = getCurrentClass(classId);
 
         if(enrollmentDao.existsByStudentIdAndClassEntityId(student.getId(), classId)){
             throw new GlobalException(HttpStatus.CONFLICT,"You are alredy in this class");
@@ -80,9 +86,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Transactional
     public ResponseEntity<GlobalResponse<List<EnrollmentResponse>>> getMyEnrollments(){
-        UserEntity user = getCurrentUser();
-        StudentEntity student = studentsDao.findByUserId(user.getId())
-                .orElseThrow(() -> new GlobalException(HttpStatus.NOT_FOUND,"Only students can see this"));
+        StudentEntity student = getCurrentStudent("Only students can see his enrollments");
 
         List<EnrollmentsEntity> enrollments = enrollmentDao.findByStudentId(student.getId());
         List<EnrollmentResponse> response = enrollments.stream()

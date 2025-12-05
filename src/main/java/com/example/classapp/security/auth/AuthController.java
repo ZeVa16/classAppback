@@ -8,6 +8,7 @@ import com.example.classapp.security.dtos.response.AuthResponse;
 import com.example.classapp.shared.constants.Api;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class AuthController {
     }
 
     @PostMapping(Api.AUTH+"/register")
-    public ResponseEntity<GlobalResponse<AuthResponse>> register(@RequestBody RegisterRequest registerRequest,HttpServletResponse response) {
+    public ResponseEntity<GlobalResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
         return authService.register(registerRequest,response);
     }
 

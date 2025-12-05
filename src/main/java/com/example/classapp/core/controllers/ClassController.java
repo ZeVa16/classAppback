@@ -48,6 +48,15 @@ public class ClassController {
         return classService.getClassStudents(classId);
     }
 
+    @PutMapping("/update/{classId}")
+    public ResponseEntity<GlobalResponse<ClassResponse>> updateClass(@PathVariable Long classId, @RequestBody ClassRequest classRequest) {
+        return classService.updateClass(classId, classRequest);
+    }
+    @DeleteMapping("/delete/{classId}")
+    public ResponseEntity<GlobalResponse<Void>> deleteClass(@PathVariable Long classId) {
+        return classService.deleteClass(classId);
+    }
+
 
 
 }

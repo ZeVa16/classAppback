@@ -15,4 +15,6 @@ public interface ClassService {
     ResponseEntity<GlobalResponse<List<ClassResponse>>> getMyCreatedClasses();
     ResponseEntity<GlobalResponse<List<StudentResponse>>> getClassStudents(Long classId);
     ResponseEntity<GlobalResponse<ClassResponse>> findClass(Long classId);
+    ResponseEntity<GlobalResponse<ClassResponse>> updateClass(Long classId,ClassRequest request);
+    ResponseEntity<GlobalResponse<Void>> deleteClass(Long classId);
 }
